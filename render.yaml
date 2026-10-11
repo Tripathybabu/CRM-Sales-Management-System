@@ -1,0 +1,27 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec).
+# Create a free MongoDB Atlas cluster (it is a replica set, so transactions work) and set MONGODB_URI in the dashboard.
+services:
+  - type: web
+    name: crm-sales-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server.js
+    healthCheckPath: /health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: TRUST_PROXY
+        value: 1
+      - key: COOKIE_SECURE
+        value: true
+      - key: COOKIE_SAME_SITE
+        value: none
+      - key: CORS_ORIGINS
+        value: http://localhost:3000
+      - key: ALLOW_PUBLIC_REGISTRATION
+        value: true

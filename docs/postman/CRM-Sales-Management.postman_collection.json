@@ -1,0 +1,1978 @@
+{
+  "info": {
+    "name": "CRM Sales Management API",
+    "description": "Generated from the OpenAPI spec (`npm run docs:postman`). Run **Auth → Log in** first: the access token is stored in `{{accessToken}}` and the refresh token cookie is handled by Postman. Creating a lead/customer/deal/activity stores its id for the follow-up requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "leadId",
+      "value": ""
+    },
+    {
+      "key": "customerId",
+      "value": ""
+    },
+    {
+      "key": "dealId",
+      "value": ""
+    },
+    {
+      "key": "activityId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Registration, login, token refresh, logout, profile",
+      "item": [
+        {
+          "name": "Register (self sign-up as sales_executive)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public sign-up. The role is always `sales_executive`; admins assign other roles. Disabled when `ALLOW_PUBLIC_REGISTRATION=false`. Sets the `crm_refresh_token` httpOnly cookie.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Asha Verma\",\n  \"email\": \"asha@crm.dev\",\n  \"phone\": \"+919876543210\",\n  \"password\": \"Passw0rd!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.data && body.data.accessToken) {",
+                  "  pm.collectionVariables.set(\"accessToken\", body.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Log in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Returns a short-lived JWT access token in the body and sets a rotating refresh token in the `crm_refresh_token` httpOnly cookie. Accounts lock for 15 minutes after 5 failed attempts.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@crm.dev\",\n  \"password\": \"Admin@12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.data && body.data.accessToken) {",
+                  "  pm.collectionVariables.set(\"accessToken\", body.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh the access token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Uses the `crm_refresh_token` cookie. The refresh token is rotated on every call; re-using an old token revokes the whole session family (theft detection)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.data && body.data.accessToken) {",
+                  "  pm.collectionVariables.set(\"accessToken\", body.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Log out (current session)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Revokes the refresh token from the cookie and clears it. Idempotent.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Log out from all devices",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout-all"
+              ]
+            },
+            "description": "Revokes every refresh token and invalidates all issued access tokens."
+          }
+        },
+        {
+          "name": "Current user profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "**Roles:** any authenticated user"
+          }
+        },
+        {
+          "name": "Update own profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "**Roles:** any authenticated user",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Asha V.\",\n  \"phone\": \"+919800000099\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change own password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                "password"
+              ]
+            },
+            "description": "Signs out all other sessions and returns a fresh session for the caller.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Passw0rd!\",\n  \"newPassword\": \"N3wPassw0rd!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management (admin) and team listing (manager)",
+      "item": [
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "-createdAt",
+                  "description": "Comma-separated sort fields; prefix with \"-\" for descending. Allowed: createdAt, updatedAt, name, email, role, lastLoginAt",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Case-insensitive keyword search",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "admin,sales_manager",
+                  "description": "Filter by role. Comma-separated list of: admin, sales_manager, sales_executive",
+                  "disabled": true
+                },
+                {
+                  "key": "isActive",
+                  "value": "",
+                  "description": "Filter by active status",
+                  "disabled": true
+                },
+                {
+                  "key": "manager",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "description": "Executives reporting to this manager",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin (all users), sales_manager (self + own team)"
+          }
+        },
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "**Roles:** admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Vikram Rao\",\n  \"email\": \"vikram@crm.dev\",\n  \"phone\": \"+919811112222\",\n  \"password\": \"Passw0rd!\",\n  \"role\": \"sales_executive\",\n  \"manager\": \"6650f1c2a8b4c2e3d4f5a6b7\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.data && body.data._id) pm.collectionVariables.set(\"userId\", body.data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get user by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager (self + team)"
+          }
+        },
+        {
+          "name": "Update user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "Changing role or resetting the password revokes the user's sessions. A manager with team members cannot change role.\n\n**Roles:** admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"sales_manager\",\n  \"manager\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "Only users without CRM records or team members can be deleted; otherwise deactivate them.\n\n**Roles:** admin"
+          }
+        },
+        {
+          "name": "Activate / deactivate user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "status"
+              ]
+            },
+            "description": "Deactivation immediately revokes all sessions of the user. Inactive users cannot log in or be assigned records.\n\n**Roles:** admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leads",
+      "description": "Lead lifecycle, assignment and conversion",
+      "item": [
+        {
+          "name": "List leads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/leads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "-createdAt",
+                  "description": "Comma-separated sort fields; prefix with \"-\" for descending. Allowed: createdAt, updatedAt, name, company, status, priority, source",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Case-insensitive keyword search",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "new,contacted",
+                  "description": "Filter by status. Comma-separated list of: new, contacted, qualified, unqualified, converted, lost",
+                  "disabled": true
+                },
+                {
+                  "key": "priority",
+                  "value": "low,medium",
+                  "description": "Filter by priority. Comma-separated list of: low, medium, high",
+                  "disabled": true
+                },
+                {
+                  "key": "source",
+                  "value": "website,referral",
+                  "description": "Filter by source. Comma-separated list of: website, referral, social_media, email, phone, other",
+                  "disabled": true
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "",
+                  "description": "Filter by assignee",
+                  "disabled": true
+                },
+                {
+                  "key": "createdBy",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "description": "Filter by creator",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                },
+                {
+                  "key": "updatedFrom",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "updatedTo",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "All filters can be combined. Executives only see leads assigned to them; managers see their team's leads.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Create lead",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Mehta\",\n  \"email\": \"rahul@acme.io\",\n  \"phone\": \"+919800000001\",\n  \"company\": \"Acme Corp\",\n  \"source\": \"website\",\n  \"priority\": \"high\",\n  \"description\": \"Requested a demo of the enterprise plan\",\n  \"assignedTo\": \"6650f1c2a8b4c2e3d4f5a6b7\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.data && body.data._id) pm.collectionVariables.set(\"leadId\", body.data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get lead by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{{leadId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{{leadId}}"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Update lead",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{{leadId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{{leadId}}"
+              ]
+            },
+            "description": "Status and assignment have dedicated endpoints. Converted leads are read-only. Priority changes are recorded as `lead_priority_changed`.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priority\": \"high\",\n  \"company\": \"Acme Corporation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete lead",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{{leadId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{{leadId}}"
+              ]
+            },
+            "description": "Converted leads cannot be deleted. Activities linked to the lead are removed; the audit trail is kept.\n\n**Roles:** admin, sales_manager (managers limited to their team)"
+          }
+        },
+        {
+          "name": "Update lead status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{{leadId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{{leadId}}",
+                "status"
+              ]
+            },
+            "description": "Allowed transitions: new → contacted|qualified|unqualified|lost; contacted → qualified|unqualified|lost; qualified → contacted|unqualified|lost; unqualified → contacted|lost; lost → contacted. `converted` is only reachable via /convert. `reason` is required for `lost`.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"qualified\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Assign / reassign lead",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{{leadId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{{leadId}}",
+                "assign"
+              ]
+            },
+            "description": "Assignee must be an active sales executive (managers: within their team). Recorded as `lead_assigned` or `lead_reassigned`.\n\n**Roles:** admin, sales_manager (managers limited to their team)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignedTo\": \"6650f1c2a8b4c2e3d4f5a6b7\",\n  \"note\": \"Territory realignment\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Convert lead to customer (+ optional deal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{{leadId}}/convert",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{{leadId}}",
+                "convert"
+              ]
+            },
+            "description": "Only `qualified`, assigned leads can be converted, exactly once. Runs in a MongoDB transaction: lead status, customer, deal, back-references and timeline entries are committed atomically. Customer fields default to the lead's data.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"address\": {\n      \"city\": \"Bengaluru\",\n      \"country\": \"India\"\n    }\n  },\n  \"deal\": {\n    \"name\": \"Acme - Enterprise plan\",\n    \"value\": 48000,\n    \"expectedCloseDate\": \"2026-12-31\",\n    \"stage\": \"discovery\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Lead timeline",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/leads/{{leadId}}/timeline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "{{leadId}}",
+                "timeline"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "lead_created,lead_updated",
+                  "description": "Filter by action. Comma-separated list of: lead_created, lead_updated, lead_assigned, lead_reassigned, lead_status_changed, lead_priority_changed, lead_converted, lead_deleted, note_added, follow_up_created, follow_up_completed, activity_created, activity_completed, activity_deleted, customer_created, customer_updated, customer_assigned, customer_deleted, deal_created, deal_updated, deal_stage_changed, deal_assigned, deal_won, deal_lost, deal_reopened, deal_deleted, user_created, user_updated, user_activated, user_deactivated, user_deleted",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Includes events of the customer and deal created from this lead.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "description": "Customer management",
+      "item": [
+        {
+          "name": "List customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "-createdAt",
+                  "description": "Comma-separated sort fields; prefix with \"-\" for descending. Allowed: createdAt, updatedAt, name, company, status",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Case-insensitive keyword search",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active,inactive",
+                  "description": "Filter by status. Comma-separated list of: active, inactive, churned",
+                  "disabled": true
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "lead",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "description": "Customer created from this lead",
+                  "disabled": true
+                },
+                {
+                  "key": "fromLead",
+                  "value": "",
+                  "description": "true = only converted customers, false = only directly created",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Create customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            },
+            "description": "Either email or phone is required. Executives own the customers they create; admins must pass `assignedTo`.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Globex Ltd\",\n  \"email\": \"ops@globex.com\",\n  \"company\": \"Globex\",\n  \"address\": {\n    \"city\": \"Pune\",\n    \"country\": \"India\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.data && body.data._id) pm.collectionVariables.set(\"customerId\", body.data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get customer by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}"
+              ]
+            },
+            "description": "Includes the original lead and associated deals.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Update customer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"inactive\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}"
+              ]
+            },
+            "description": "Customers created from a lead conversion or with deals cannot be deleted (set status instead).\n\n**Roles:** admin, sales_manager (managers limited to their team)"
+          }
+        },
+        {
+          "name": "Assign / reassign customer",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}",
+                "assign"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager (managers limited to their team)"
+          }
+        },
+        {
+          "name": "Customer timeline",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/timeline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}",
+                "timeline"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "lead_created,lead_updated",
+                  "description": "Filter by action. Comma-separated list of: lead_created, lead_updated, lead_assigned, lead_reassigned, lead_status_changed, lead_priority_changed, lead_converted, lead_deleted, note_added, follow_up_created, follow_up_completed, activity_created, activity_completed, activity_deleted, customer_created, customer_updated, customer_assigned, customer_deleted, deal_created, deal_updated, deal_stage_changed, deal_assigned, deal_won, deal_lost, deal_reopened, deal_deleted, user_created, user_updated, user_activated, user_deactivated, user_deleted",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Includes events of the customer's deals.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Deals",
+      "description": "Deal pipeline and stage rules",
+      "item": [
+        {
+          "name": "List deals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deals"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "-createdAt",
+                  "description": "Comma-separated sort fields; prefix with \"-\" for descending. Allowed: createdAt, updatedAt, name, value, probability, expectedRevenue, expectedCloseDate, stage, closedAt",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Case-insensitive keyword search",
+                  "disabled": true
+                },
+                {
+                  "key": "stage",
+                  "value": "qualification,discovery",
+                  "description": "Filter by stage. Comma-separated list of: qualification, discovery, proposal, negotiation, won, lost",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "open,won",
+                  "description": "Filter by status. Comma-separated list of: open, won, lost",
+                  "disabled": true
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "customer",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "lead",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "minAmount",
+                  "value": "",
+                  "description": "Minimum deal value",
+                  "disabled": true
+                },
+                {
+                  "key": "maxAmount",
+                  "value": "",
+                  "description": "Maximum deal value",
+                  "disabled": true
+                },
+                {
+                  "key": "closeDateFrom",
+                  "value": "",
+                  "description": "Expected close date from",
+                  "disabled": true
+                },
+                {
+                  "key": "closeDateTo",
+                  "value": "",
+                  "description": "Expected close date to (inclusive)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Create deal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deals"
+              ]
+            },
+            "description": "The lead reference is taken from the customer. `expectedRevenue` is computed by the server.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme - Add-on seats\",\n  \"customer\": \"6650f1c2a8b4c2e3d4f5a6b7\",\n  \"value\": 12000,\n  \"expectedCloseDate\": \"2026-12-15\",\n  \"stage\": \"proposal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.data && body.data._id) pm.collectionVariables.set(\"dealId\", body.data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get deal by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deals",
+                "{{dealId}}"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Update deal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deals",
+                "{{dealId}}"
+              ]
+            },
+            "description": "Stage changes use /stage. Closed deals only allow `description` changes.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": 52000,\n  \"probability\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete deal",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deals",
+                "{{dealId}}"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager (managers limited to their team); won deals: admin only"
+          }
+        },
+        {
+          "name": "Change deal stage",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}/stage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deals",
+                "{{dealId}}",
+                "stage"
+              ]
+            },
+            "description": "- Open stages can move freely between each other; probability defaults to the configured stage probability.\n- `won`: value must be > 0, linked customer must exist, owner must be active; probability = 100. Optional `finalValue`.\n- `lost`: `lostReason` required; probability = 0.\n- Closed → open: only admin/manager with `reopenReason`. Won ↔ Lost directly is not allowed.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage\": \"negotiation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Assign / reassign deal",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deals",
+                "{{dealId}}",
+                "assign"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager (managers limited to their team)"
+          }
+        },
+        {
+          "name": "Deal timeline",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals/{{dealId}}/timeline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deals",
+                "{{dealId}}",
+                "timeline"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "lead_created,lead_updated",
+                  "description": "Filter by action. Comma-separated list of: lead_created, lead_updated, lead_assigned, lead_reassigned, lead_status_changed, lead_priority_changed, lead_converted, lead_deleted, note_added, follow_up_created, follow_up_completed, activity_created, activity_completed, activity_deleted, customer_created, customer_updated, customer_assigned, customer_deleted, deal_created, deal_updated, deal_stage_changed, deal_assigned, deal_won, deal_lost, deal_reopened, deal_deleted, user_created, user_updated, user_activated, user_deactivated, user_deleted",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activities",
+      "description": "Calls, meetings, follow-ups, notes",
+      "item": [
+        {
+          "name": "List activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activities"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "dueDate",
+                  "description": "Comma-separated sort fields; prefix with \"-\" for descending. Allowed: dueDate, createdAt, updatedAt, completedAt, title, type",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Case-insensitive keyword search",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "call,email",
+                  "description": "Filter by type. Comma-separated list of: call, email, meeting, demo, follow_up, reminder, note",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "pending,completed",
+                  "description": "Filter by status. Comma-separated list of: pending, completed, overdue",
+                  "disabled": true
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "createdBy",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "relatedType",
+                  "value": "lead",
+                  "disabled": true
+                },
+                {
+                  "key": "relatedId",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "dueFrom",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "dueTo",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Visible: activities assigned to or created by the user (managers: their team). When `relatedType` + `relatedId` point to an accessible lead/customer/deal, its full activity history is returned. `status=overdue` returns pending activities whose due date has passed.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Create activity / note / follow-up",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activities"
+              ]
+            },
+            "description": "`dueDate` is required (and must not be in the past) for every type except `note`. Notes are stored as completed.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"follow_up\",\n  \"title\": \"Follow up on proposal\",\n  \"dueDate\": \"2026-11-05T10:00:00.000Z\",\n  \"relatedType\": \"deal\",\n  \"relatedId\": \"6650f1c2a8b4c2e3d4f5a6b7\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.success && body.data && body.data._id) pm.collectionVariables.set(\"activityId\", body.data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get activity by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activities/{{activityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activities",
+                "{{activityId}}"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Update activity",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activities/{{activityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activities",
+                "{{activityId}}"
+              ]
+            },
+            "description": "Completed activities cannot be modified.\n\n**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dueDate\": \"2026-11-10T09:00:00.000Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete activity",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activities/{{activityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activities",
+                "{{activityId}}"
+              ]
+            },
+            "description": "**Roles:** creator (executives), admin, sales_manager (team)"
+          }
+        },
+        {
+          "name": "Mark activity as completed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activities/{{activityId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activities",
+                "{{activityId}}",
+                "complete"
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"outcome\": \"Customer confirmed budget approval\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Sales analytics",
+      "item": [
+        {
+          "name": "Sales KPIs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies) — admins: company, managers: team, executives: self"
+          }
+        },
+        {
+          "name": "Sales pipeline by stage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/pipeline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "pipeline"
+              ],
+              "query": [
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager, sales_executive (record-level scope applies)"
+          }
+        },
+        {
+          "name": "Team performance per sales executive",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/team-performance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "team-performance"
+              ],
+              "query": [
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                },
+                {
+                  "key": "manager",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "description": "Admins: limit to one manager's team",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin (all executives or one team via `manager`), sales_manager (own team)"
+          }
+        },
+        {
+          "name": "Monthly closed-won revenue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/revenue-trend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "revenue-trend"
+              ],
+              "query": [
+                {
+                  "key": "months",
+                  "value": "6",
+                  "disabled": true
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin, sales_manager (managers limited to their team)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "description": "CRM configuration and audit log (admin)",
+      "item": [
+        {
+          "name": "Get CRM configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "config"
+              ]
+            },
+            "description": "**Roles:** any authenticated user"
+          }
+        },
+        {
+          "name": "Update CRM configuration",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "config"
+              ]
+            },
+            "description": "**Roles:** admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stageProbabilities\": {\n    \"proposal\": 55\n  },\n  \"maxDealCloseDays\": 365\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Global audit log",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/timeline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeline"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "lead_created,lead_updated",
+                  "description": "Filter by action. Comma-separated list of: lead_created, lead_updated, lead_assigned, lead_reassigned, lead_status_changed, lead_priority_changed, lead_converted, lead_deleted, note_added, follow_up_created, follow_up_completed, activity_created, activity_completed, activity_deleted, customer_created, customer_updated, customer_assigned, customer_deleted, deal_created, deal_updated, deal_stage_changed, deal_assigned, deal_won, deal_lost, deal_reopened, deal_deleted, user_created, user_updated, user_activated, user_deactivated, user_deleted",
+                  "disabled": true
+                },
+                {
+                  "key": "entityType",
+                  "value": "lead",
+                  "disabled": true
+                },
+                {
+                  "key": "entityId",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "performedBy",
+                  "value": "6650f1c2a8b4c2e3d4f5a6b7",
+                  "disabled": true
+                },
+                {
+                  "key": "createdFrom",
+                  "value": "",
+                  "description": "Created on/after (ISO date or date-time)",
+                  "disabled": true
+                },
+                {
+                  "key": "createdTo",
+                  "value": "",
+                  "description": "Created on/before; a bare date includes the whole day",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "**Roles:** admin"
+          }
+        }
+      ]
+    }
+  ]
+}
