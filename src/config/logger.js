@@ -1,7 +1,18 @@
 const pino = require('pino');
 const env = require('./env');
 
-const usePretty = !env.isProduction && !env.isTest;
+// pino-pretty is a devDependency: fall back to JSON logs when it is not installed
+// (e.g. `npm ci --omit=dev` on a host where NODE_ENV was not set to production).
+const prettyAvailable = (() => {
+  try {
+    require.resolve('pino-pretty');
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+const usePretty = !env.isProduction && !env.isTest && prettyAvailable;
 
 const logger = pino({
   level: env.isTest ? 'silent' : env.LOG_LEVEL,
