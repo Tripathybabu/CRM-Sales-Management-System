@@ -1,15 +1,15 @@
 {
   "name": "crm-sales-management-system",
   "version": "1.0.0",
-  "description": "RESTful backend for a CRM Sales Management System (leads → customers → deals) built with Node.js, Express and MongoDB.",
+  "description": "RESTful backend for a CRM Sales Management System (leads \u2192 customers \u2192 deals) built with Node.js, Express and MongoDB.",
   "main": "src/server.js",
   "private": true,
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node api.js && node src/server.js",
+    "dev": "node api.js && nodemon src/server.js",
     "seed": "node scripts/seed.js",
     "seed:fresh": "node scripts/seed.js --fresh",
     "test": "jest --runInBand",

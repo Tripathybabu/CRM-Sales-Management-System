@@ -15,7 +15,7 @@ Built with **Node.js, Express, MongoDB (Mongoose)**, with JWT authentication, ro
 | **Postman collection** | [`docs/postman/CRM-Sales-Management.postman_collection.json`](docs/postman/CRM-Sales-Management.postman_collection.json) |
 | **Database design** | [`docs/DATABASE_DESIGN.md`](docs/DATABASE_DESIGN.md) |
 | **Sample requests / responses** | [`docs/API_EXAMPLES.md`](docs/API_EXAMPLES.md) |
-| **Deployed link** | _add your Render/Railway URL here after deploying (see [Deployment](#deployment))_ |
+| **Live API** | https://crm-sales-management-system-oly8.onrender.com — Swagger: https://crm-sales-management-system-oly8.onrender.com/api-docs (free tier: first request after idle may take ~50 s) |
 
 ---
 
